@@ -82,13 +82,14 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
-  const authService = new AuthService(window.location.origin);
+  const authService = React.useMemo(() => new AuthService(window.location.origin), []);
 
   useEffect(() => {
     // Check for existing session on mount
     const checkAuth = async () => {
       try {
         const currentUser = authService.getCurrentUser();
+        console.log('Checking auth on mount, currentUser:', currentUser);
         if (currentUser) {
           dispatch({ type: 'AUTH_SUCCESS', payload: currentUser });
         } else {
