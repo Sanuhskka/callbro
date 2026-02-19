@@ -1,0 +1,49 @@
+# Development environment overrides
+version: '3.8'
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: secure_p2p_messenger_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+  server:
+    build:
+      context: .
+      dockerfile: packages/server/Dockerfile
+      target: builder
+    command: npm run dev --workspace=@secure-p2p-messenger/server
+    volumes:
+      - ./packages/server/src:/app/packages/server/src
+      - ./packages/server/package.json:/app/packages/server/package.json
+    environment:
+      NODE_ENV: development
+      WS_PORT: 8081
+    ports:
+      - "8081:8081"
+
+  client:
+    build:
+      context: .
+      dockerfile: packages/client/Dockerfile
+      target: builder
+    command: npm run dev --workspace=@secure-p2p-messenger/client
+    volumes:
+      - ./packages/client/src:/app/packages/client/src
+      - ./packages/client/public:/app/packages/client/public
+      - ./packages/client/package.json:/app/packages/client/package.json
+    environment:
+      - VITE_WS_URL=ws://localhost:8081
+      - VITE_TURN_SERVER=turn:localhost:3478
+      - VITE_STUN_SERVER=stun:localhost:3478
+    ports:
+      - "5173:5173"
+
+  coturn:
+    environment:
+      - EXTERNAL_IP=127.0.0.1
+      - TURN_USERNAME=dev
+      - TURN_PASSWORD=dev123

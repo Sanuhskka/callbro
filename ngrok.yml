@@ -1,0 +1,20 @@
+# Ngrok Configuration
+# Secure P2P Messenger
+
+version: "2"
+authtoken: 37TZ9geaKvmc7yYmhYys7Z2bLu2_5vrNmMNJ7bDGCMnCe9YUC
+
+tunnels:
+  # HTTP/HTTPS для клиента
+  web:
+    proto: http
+    addr: 80
+    domain: ebony-unacquainted-myra.ngrok-free.dev
+    inspect: true
+    
+  # WebSocket для сигнального сервера
+  websocket:
+    proto: http
+    addr: 8081
+    domain: ebony-unacquainted-myra.ngrok-free.dev
+    inspect: true

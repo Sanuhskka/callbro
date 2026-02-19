@@ -1,0 +1,65 @@
+# Production environment overrides
+version: '3.8'
+
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    restart: always
+
+  server:
+    environment:
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET}
+      DB_HOST: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  client:
+    environment:
+      - VITE_WS_URL=${VITE_WS_URL}
+      - VITE_TURN_SERVER=${VITE_TURN_SERVER}
+      - VITE_STUN_SERVER=${VITE_STUN_SERVER}
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  coturn:
+    environment:
+      - EXTERNAL_IP=${EXTERNAL_IP}
+      - TURN_USERNAME=${TURN_USERNAME}
+      - TURN_PASSWORD=${TURN_PASSWORD}
+    volumes:
+      - ./certs:/etc/coturn/certs:ro
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+volumes:
+  postgres_data:
+    driver: local
