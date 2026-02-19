@@ -81,8 +81,8 @@ export class AuthService {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Registration failed');
+        const errorData = await response.json().catch(() => ({ error: 'Registration failed' }));
+        throw new Error(errorData.error || 'Registration failed');
       }
 
       const data = await response.json();
@@ -122,8 +122,8 @@ export class AuthService {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Login failed');
+        const errorData = await response.json().catch(() => ({ error: 'Login failed' }));
+        throw new Error(errorData.error || 'Invalid username or password');
       }
 
       const data = await response.json();
@@ -134,7 +134,7 @@ export class AuthService {
       // Обновляем публичный ключ на сервере
       try {
         const publicKeyPem = await this.exportPublicKey(keyPair.publicKey);
-        await this.updatePublicKey(data.token, publicKeyPem);
+        await this.updatePublicKey(data.user.id, data.token, publicKeyPem);
       } catch (error) {
         console.warn('Failed to update public key:', error);
       }
@@ -291,8 +291,9 @@ export class AuthService {
   /**
    * Обновляет публичный ключ на сервере
    */
-  private async updatePublicKey(token: string, publicKey: string): Promise<void> {
+  private async updatePublicKey(userId: string, token: string, publicKey: string): Promise<void> {
     const response = await this.makeRequest('/api/user/update-key', {
+      userId,
       publicKey,
     }, token);
 
