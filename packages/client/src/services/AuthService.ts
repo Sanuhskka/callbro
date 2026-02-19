@@ -47,7 +47,7 @@ export class AuthService {
   private serverUrl: string;
   private state: AuthState;
 
-  constructor(serverUrl: string = 'ws://localhost:8080') {
+  constructor(serverUrl: string = window.location.origin) {
     this.cryptoService = new CryptoService();
     this.serverUrl = serverUrl;
     this.state = {
