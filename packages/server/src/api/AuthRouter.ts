@@ -42,6 +42,8 @@ export class AuthRouter {
         await this.handleRegister(req, res);
       } else if (path === '/api/auth/login' && req.method === 'POST') {
         await this.handleLogin(req, res);
+      } else if (path === '/api/user/update-key' && req.method === 'POST') {
+        await this.handleUpdateKey(req, res);
       } else if (path === '/api/health' && req.method === 'GET') {
         await this.handleHealth(req, res);
       } else {
@@ -138,6 +140,31 @@ export class AuthRouter {
       } else {
         this.sendError(res, 500, 'Login failed');
       }
+    }
+  }
+
+  /**
+   * Обрабатывает обновление публичного ключа
+   */
+  private async handleUpdateKey(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    try {
+      const body = await this.parseBody(req);
+      
+      if (!body.userId || !body.publicKey) {
+        this.sendError(res, 400, 'User ID and public key are required');
+        return;
+      }
+
+      // Обновляем публичный ключ в базе данных
+      await this.userManager.updatePublicKey(body.userId, body.publicKey);
+
+      this.sendSuccess(res, 200, {
+        success: true,
+        message: 'Public key updated successfully',
+      });
+    } catch (error: any) {
+      console.error('Update key error:', error);
+      this.sendError(res, 500, 'Failed to update public key');
     }
   }
 

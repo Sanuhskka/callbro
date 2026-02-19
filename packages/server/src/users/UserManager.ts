@@ -338,6 +338,28 @@ export class UserManager {
   }
 
   /**
+   * Обновляет публичный ключ пользователя
+   */
+  async updatePublicKey(userId: string, publicKey: string): Promise<void> {
+    const client = await this.pool.connect();
+    
+    try {
+      const result = await client.query(
+        'UPDATE users SET public_key = $1 WHERE id = $2',
+        [publicKey, userId]
+      );
+
+      if (result.rowCount === 0) {
+        throw new Error('User not found');
+      }
+
+      console.log(`Public key updated for user: ${userId}`);
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * Добавляет контакт
    */
   async addContact(userId: string, contactUsername: string, nickname?: string): Promise<Contact> {
