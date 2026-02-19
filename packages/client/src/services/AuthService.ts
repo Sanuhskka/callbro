@@ -352,21 +352,36 @@ export class AuthService {
    */
   private async saveSession(): Promise<void> {
     if (!this.state.token || !this.state.user) {
+      console.warn('Cannot save session: missing token or user');
       return;
     }
 
-    const sessionData = {
-      user: this.state.user,
-      token: this.state.token,
-      // Сохраняем приватный ключ в виде JSON Web Key (JWK)
-      privateKeyJwk: this.state.keyPair ? await this.exportPrivateKey(this.state.keyPair.privateKey) : null,
-      publicKeyJwk: this.state.keyPair ? await this.exportPublicKeyJwk(this.state.keyPair.publicKey) : null,
-    };
-
     try {
+      const sessionData = {
+        user: this.state.user,
+        token: this.state.token,
+        // Сохраняем приватный ключ в виде JSON Web Key (JWK)
+        privateKeyJwk: this.state.keyPair ? await this.exportPrivateKey(this.state.keyPair.privateKey) : null,
+        publicKeyJwk: this.state.keyPair ? await this.exportPublicKeyJwk(this.state.keyPair.publicKey) : null,
+      };
+
       localStorage.setItem('auth-session', JSON.stringify(sessionData));
+      console.log('Session saved successfully');
     } catch (error) {
-      console.warn('Failed to save session to localStorage:', error);
+      console.error('Failed to save session to localStorage:', error);
+      // Попробуем сохранить хотя бы без ключей
+      try {
+        const minimalSession = {
+          user: this.state.user,
+          token: this.state.token,
+          privateKeyJwk: null,
+          publicKeyJwk: null,
+        };
+        localStorage.setItem('auth-session', JSON.stringify(minimalSession));
+        console.log('Session saved without keys');
+      } catch (fallbackError) {
+        console.error('Failed to save even minimal session:', fallbackError);
+      }
     }
   }
 
