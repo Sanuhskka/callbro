@@ -70,7 +70,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
 
     try {
       await login(formData.username, formData.password);
-      navigate('/');
+      // Force page reload to ensure state is updated
+      window.location.href = '/';
     } catch (error) {
       // Error is handled by the auth context
       console.error('Login failed:', error);
