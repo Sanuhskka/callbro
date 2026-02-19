@@ -121,7 +121,7 @@ export const WebRTCProvider: React.FC<WebRTCProviderProps> = ({ children }) => {
         const { CryptoService } = await import('../services/CryptoService');
         const { WebRTCService } = await import('../services/WebRTCService');
 
-        const authService = new AuthService('http://localhost:8080');
+        const authService = new AuthService(window.location.origin);
         const signalingService = new SignalingService(authService);
         const cryptoService = new CryptoService();
         const webRTCService = new WebRTCService(authService, signalingService, cryptoService);

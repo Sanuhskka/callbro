@@ -64,9 +64,11 @@ export class SignalingService {
   private onHangupListeners: ((fromUserId: string) => void)[] = [];
   private onErrorListeners: ((error: Error) => void)[] = [];
 
-  constructor(authService: AuthService, serverUrl: string = 'ws://localhost:8080') {
+  constructor(authService: AuthService, serverUrl?: string) {
     this.authService = authService;
-    this.serverUrl = serverUrl;
+    // Use WebSocket protocol based on current page protocol
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    this.serverUrl = serverUrl || `${wsProtocol}//${window.location.host}`;
   }
 
   /**

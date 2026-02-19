@@ -78,7 +78,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
-  const authService = new AuthService('http://localhost:8080');
+  const authService = new AuthService(window.location.origin);
 
   useEffect(() => {
     // Check for existing session on mount
