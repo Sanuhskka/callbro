@@ -106,8 +106,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
     try {
       await register(formData.username, formData.password);
-      // Force page reload to ensure state is updated
-      window.location.href = '/';
+      // Don't reload - let React Router handle navigation automatically
+      // The AppRoutes component will redirect to '/' when isAuthenticated becomes true
     } catch (error) {
       // Error is handled by the auth context
       console.error('Registration failed:', error);

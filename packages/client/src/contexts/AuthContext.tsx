@@ -31,17 +31,21 @@ type AuthAction =
   | { type: 'CLEAR_ERROR' };
 
 const authReducer = (state: AuthState, action: AuthAction): AuthState => {
+  console.log('AuthReducer - Current state:', state, 'Action:', action);
+  
   switch (action.type) {
     case 'AUTH_START':
       return { ...state, isLoading: true, error: null };
     case 'AUTH_SUCCESS':
-      return { 
+      const newState = { 
         ...state, 
         isAuthenticated: true, 
         user: action.payload, 
         isLoading: false, 
         error: null 
       };
+      console.log('AuthReducer - New state after AUTH_SUCCESS:', newState);
+      return newState;
     case 'AUTH_FAILURE':
       return { 
         ...state, 
@@ -104,7 +108,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     try {
       const authResponse = await authService.login({ username, password });
+      console.log('Login successful, dispatching AUTH_SUCCESS with user:', authResponse.user);
       dispatch({ type: 'AUTH_SUCCESS', payload: authResponse.user });
+      console.log('AUTH_SUCCESS dispatched');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Login failed';
       dispatch({ type: 'AUTH_FAILURE', payload: message });
