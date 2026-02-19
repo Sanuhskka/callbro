@@ -1,17 +1,49 @@
 import { SecureWebSocketServer } from './websocket/WebSocketServer';
+import { AuthRouter } from './api/AuthRouter';
+import { UserManager } from './users/UserManager';
+import { AuthMiddleware } from './auth/AuthMiddleware';
+import * as http from 'http';
 import * as dotenv from 'dotenv';
 
 // Загружаем переменные окружения
 dotenv.config();
 
 const WS_PORT = parseInt(process.env.WS_PORT || '8081', 10);
+const JWT_SECRET = process.env.JWT_SECRET || 'change-this-secret-key';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 console.log('🚀 Secure P2P Messenger - Server Starting...');
-console.log(`📡 WebSocket Server will start on port ${WS_PORT}`);
+console.log(`📡 Server will start on port ${WS_PORT}`);
 
-// Создаем WebSocket сервер
+// Создаем AuthMiddleware
+const authMiddleware = new AuthMiddleware({
+  jwtSecret: JWT_SECRET,
+  jwtExpiration: JWT_EXPIRES_IN,
+});
+
+// Создаем UserManager
+const userManager = new UserManager(
+  {
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432', 10),
+    database: process.env.DB_NAME || 'secure_p2p_messenger',
+    username: process.env.DB_USER || 'messenger_user',
+    password: process.env.DB_PASSWORD || 'messenger_password_123',
+  },
+  authMiddleware
+);
+
+// Создаем AuthRouter
+const authRouter = new AuthRouter(userManager);
+
+// Создаем HTTP сервер для REST API
+const httpServer = http.createServer(async (req, res) => {
+  await authRouter.handleRequest(req, res);
+});
+
+// Создаем WebSocket сервер (используя тот же порт через upgrade)
 const wsServer = new SecureWebSocketServer({
-  port: WS_PORT,
+  server: httpServer,
   host: '0.0.0.0',
 });
 
@@ -41,22 +73,31 @@ wsServer.on('error', (error) => {
   console.error('❌ Server error:', error);
 });
 
-// Запускаем сервер
+// Запускаем HTTP сервер
+httpServer.listen(WS_PORT, '0.0.0.0', () => {
+  console.log(`✅ HTTP Server started on port ${WS_PORT}`);
+});
+
+// Запускаем WebSocket сервер
 wsServer.start().catch((error) => {
-  console.error('Failed to start server:', error);
+  console.error('Failed to start WebSocket server:', error);
   process.exit(1);
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('\n🛑 Shutting down server...');
+  httpServer.close();
   await wsServer.stop();
+  await userManager.close();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('\n🛑 Shutting down server...');
+  httpServer.close();
   await wsServer.stop();
+  await userManager.close();
   process.exit(0);
 });
 

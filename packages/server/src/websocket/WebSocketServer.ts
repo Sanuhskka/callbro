@@ -1,5 +1,6 @@
 import * as WebSocket from 'ws';
 import * as https from 'https';
+import * as http from 'http';
 import * as fs from 'fs';
 import { EventEmitter } from 'events';
 
@@ -14,8 +15,9 @@ import { EventEmitter } from 'events';
  */
 
 export interface WebSocketConfig {
-  port: number;
+  port?: number;
   host?: string;
+  server?: http.Server | https.Server;
   ssl?: {
     key: string;
     cert: string;
@@ -65,7 +67,11 @@ export class SecureWebSocketServer extends EventEmitter {
     }
 
     try {
-      if (this.config.ssl) {
+      if (this.config.server) {
+        // Используем существующий HTTP/HTTPS сервер
+        this.wss = new WebSocket.Server({ server: this.config.server });
+        console.log(`WebSocket server attached to existing HTTP server`);
+      } else if (this.config.ssl) {
         // Создаем WSS сервер с TLS
         const sslOptions = {
           key: fs.readFileSync(this.config.ssl.key),
@@ -81,7 +87,7 @@ export class SecureWebSocketServer extends EventEmitter {
       } else {
         // Создаем обычный WS сервер
         this.wss = new WebSocket.Server({
-          port: this.config.port,
+          port: this.config.port!,
           host: this.config.host,
         });
 
