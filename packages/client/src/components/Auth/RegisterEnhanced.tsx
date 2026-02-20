@@ -8,19 +8,16 @@ import {
   Alert,
   CircularProgress,
   IconButton,
-  Checkbox,
-  FormControlLabel,
-  useTheme,
-  useMediaQuery,
 } from '@mui/material';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import { useTheme } from '@mui/system';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import {
   Eye,
   EyeOff,
   User,
   Lock,
-  Mail,
-  Shield,
-  ArrowRight,
   Check,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -108,7 +105,7 @@ const RegisterEnhanced: React.FC = () => {
 
     try {
       setLoading(true);
-      await register(formData.username, formData.email, formData.password);
+      await register(formData.username, formData.password);
       navigate('/chat');
     } catch (err: any) {
       setError(err.message || 'Ошибка регистрации');
@@ -153,7 +150,7 @@ const RegisterEnhanced: React.FC = () => {
               mb: 2,
             }}
           >
-            <Shield size={32} color="white" />
+            <Lock size={32} />
           </Box>
           <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
             Создать аккаунт
@@ -183,7 +180,9 @@ const RegisterEnhanced: React.FC = () => {
             disabled={loading}
             InputProps={{
               startAdornment: (
-                <User size={20} style={{ marginRight: 8, color: '#666' }} />
+                <Box sx={{ mr: 1, color: '#666', display: 'flex' }}>
+                  <User size={20} />
+                </Box>
               ),
             }}
             sx={{
@@ -203,11 +202,6 @@ const RegisterEnhanced: React.FC = () => {
             margin="normal"
             variant="outlined"
             disabled={loading}
-            InputProps={{
-              startAdornment: (
-                <Mail size={20} style={{ marginRight: 8, color: '#666' }} />
-              ),
-            }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
@@ -227,7 +221,9 @@ const RegisterEnhanced: React.FC = () => {
             disabled={loading}
             InputProps={{
               startAdornment: (
-                <Lock size={20} style={{ marginRight: 8, color: '#666' }} />
+                <Box sx={{ mr: 1, color: '#666', display: 'flex' }}>
+                  <Lock size={20} />
+                </Box>
               ),
               endAdornment: (
                 <IconButton
@@ -289,7 +285,9 @@ const RegisterEnhanced: React.FC = () => {
             disabled={loading}
             InputProps={{
               startAdornment: (
-                <Lock size={20} style={{ marginRight: 8, color: '#666' }} />
+                <Box sx={{ mr: 1, color: '#666', display: 'flex' }}>
+                  <Lock size={20} />
+                </Box>
               ),
               endAdornment: (
                 <IconButton
@@ -312,7 +310,7 @@ const RegisterEnhanced: React.FC = () => {
             control={
               <Checkbox
                 checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAgreed(e.target.checked)}
                 disabled={loading}
               />
             }
@@ -350,7 +348,6 @@ const RegisterEnhanced: React.FC = () => {
             ) : (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 Создать аккаунт
-                <ArrowRight size={20} />
               </Box>
             )}
           </Button>
@@ -386,21 +383,27 @@ const RegisterEnhanced: React.FC = () => {
         >
           <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
             <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <Shield size={14} />
+              <Lock size={14} />
               Безопасность и приватность
             </Box>
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Check size={12} color="success.main" />
+              <Box sx={{ color: 'success.main', display: 'flex' }}>
+                <Check size={12} />
+              </Box>
               End-to-end шифрование
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Check size={12} color="success.main" />
+              <Box sx={{ color: 'success.main', display: 'flex' }}>
+                <Check size={12} />
+              </Box>
               Никаких сторонних серверов
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Check size={12} color="success.main" />
+              <Box sx={{ color: 'success.main', display: 'flex' }}>
+                <Check size={12} />
+              </Box>
               P2P соединения
             </Typography>
           </Box>

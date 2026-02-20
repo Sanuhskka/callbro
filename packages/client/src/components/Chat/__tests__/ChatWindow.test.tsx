@@ -27,6 +27,7 @@ const mockAuthContext = {
   register: jest.fn(),
   logout: jest.fn(),
   clearError: jest.fn(),
+  autoLogin: jest.fn().mockResolvedValue(true),
 };
 
 // Mock the services

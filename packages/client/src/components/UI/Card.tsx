@@ -1,13 +1,6 @@
 import React from 'react';
-import {
-  Card as MuiCard,
-  CardContent,
-  CardActions,
-  CardHeader,
-  CardMedia,
-  SxProps,
-  Theme,
-} from '@mui/material';
+import { Card as MuiCard, CardContent } from '@mui/material';
+import type { SxProps, Theme } from '@mui/system';
 
 interface CustomCardProps {
   children?: React.ReactNode;
@@ -22,10 +15,6 @@ interface CustomCardProps {
 
 const CustomCard: React.FC<CustomCardProps> = ({
   children,
-  title,
-  subtitle,
-  image,
-  actions,
   elevation = 2,
   variant = 'elevation',
   sx,
@@ -46,32 +35,6 @@ const CustomCard: React.FC<CustomCardProps> = ({
       }}
       {...props}
     >
-      {image && (
-        <CardMedia
-          component="img"
-          height="140"
-          image={image}
-          alt={title}
-        />
-      )}
-      
-      {(title || subtitle) && (
-        <CardHeader
-          title={title}
-          subheader={subtitle}
-          sx={{
-            '& .MuiCardHeader-title': {
-              fontSize: '1.25rem',
-              fontWeight: 600,
-            },
-            '& .MuiCardHeader-subheader': {
-              fontSize: '0.875rem',
-              color: 'text.secondary',
-            },
-          }}
-        />
-      )}
-      
       {children && (
         <CardContent
           sx={{
@@ -82,12 +45,6 @@ const CustomCard: React.FC<CustomCardProps> = ({
         >
           {children}
         </CardContent>
-      )}
-      
-      {actions && (
-        <CardActions sx={{ justifyContent: 'flex-end', p: 2 }}>
-          {actions}
-        </CardActions>
       )}
     </MuiCard>
   );

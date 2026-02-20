@@ -6,23 +6,21 @@ import {
   Avatar,
   Paper,
   CircularProgress,
-  useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/system';
-import Grid from '@mui/material/Unstable_Grid2';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import {
   Phone,
   Video,
   VideoOff,
   Mic,
   MicOff,
-  Monitor,
   MessageSquare,
   Maximize2,
   Volume2,
   Settings,
   X,
-  Users,
+  User,
 } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -49,9 +47,6 @@ const CallWindowEnhanced: React.FC = () => {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
   const { 
-    localStream, 
-    remoteStream, 
-    isCallActive, 
     endCall, 
     toggleAudio, 
     toggleVideo 
@@ -76,18 +71,6 @@ const CallWindowEnhanced: React.FC = () => {
     }
     return () => clearInterval(interval);
   }, [callState]);
-
-  useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
-    }
-  }, [localStream, localVideoRef]);
-
-  useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
-      remoteVideoRef.current.srcObject = remoteStream;
-    }
-  }, [remoteStream, remoteVideoRef]);
 
   const loadContactInfo = async () => {
     if (!contactId) return;
@@ -145,14 +128,9 @@ const CallWindowEnhanced: React.FC = () => {
     const gridColumns = showParticipants ? 2 : 1;
     
     return (
-      <Grid container spacing={2} sx={{ height: '100%', p: 2 }}>
+      <Box sx={{ height: '100%', p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
         {/* Local Video */}
-        <Grid 
-          item 
-          xs={12} 
-          md={gridColumns === 2 ? 6 : 12}
-          sx={{ position: 'relative' }}
-        >
+        <Box sx={{ position: 'relative', flex: 1 }}>
           <Paper
             sx={{
               height: isMobile ? 200 : 400,
@@ -192,23 +170,22 @@ const CallWindowEnhanced: React.FC = () => {
               
               <Box sx={{ display: 'flex', gap: 1 }}>
                 {!isAudioEnabled && (
-                  <MicOff size={16} sx={{ color: 'error.main' }} />
+                  <Box sx={{ color: 'error.main', display: 'flex' }}>
+                    <MicOff size={16} />
+                  </Box>
                 )}
                 {!isVideoEnabled && (
-                  <VideoOff size={16} sx={{ color: 'error.main' }} />
+                  <Box sx={{ color: 'error.main', display: 'flex' }}>
+                    <VideoOff size={16} />
+                  </Box>
                 )}
               </Box>
             </Box>
           </Paper>
-        </Grid>
+        </Box>
 
         {/* Remote Video */}
-        <Grid 
-          item 
-          xs={12} 
-          md={gridColumns === 2 ? 6 : 12}
-          sx={{ position: 'relative' }}
-        >
+        <Box sx={{ position: 'relative', flex: 1 }}>
           <Paper
             sx={{
               height: isMobile ? 200 : 400,
@@ -274,8 +251,8 @@ const CallWindowEnhanced: React.FC = () => {
               </Box>
             )}
           </Paper>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     );
   };
 
@@ -314,13 +291,10 @@ const CallWindowEnhanced: React.FC = () => {
               <MessageSquare />
             </IconButton>
             <IconButton onClick={() => setShowParticipants(!showParticipants)} sx={{ color: 'white' }}>
-              <Users />
+              <User />
             </IconButton>
             <IconButton onClick={() => setShowSettings(!showSettings)} sx={{ color: 'white' }}>
               <Settings />
-            </IconButton>
-            <IconButton onClick={() => setIsScreenSharing(!isScreenSharing)} sx={{ color: 'white' }}>
-              <Monitor />
             </IconButton>
             <IconButton onClick={() => navigate('/chat')} sx={{ color: 'white' }}>
               <Maximize2 />
@@ -420,17 +394,17 @@ const CallWindowEnhanced: React.FC = () => {
         </IconButton>
 
         <IconButton
-          onClick={handleToggleScreenShare}
+          onClick={handleEndCall}
           size="large"
           sx={{
-            bgcolor: isScreenSharing ? 'primary.main' : 'grey.700',
+            bgcolor: 'error.main',
             color: 'white',
             '&:hover': {
-              bgcolor: isScreenSharing ? 'primary.dark' : 'grey.600',
+              bgcolor: 'error.dark',
             },
           }}
         >
-          <Monitor size={24} />
+          <Phone size={24} />
         </IconButton>
       </Paper>
     </Box>

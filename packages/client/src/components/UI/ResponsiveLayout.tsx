@@ -1,11 +1,14 @@
 import React from 'react';
-import { Box, useTheme, useMediaQuery } from '@mui/material';
+import { Box } from '@mui/material';
+import { useTheme } from '@mui/system';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import type { SxProps, Theme } from '@mui/system';
 
 interface ResponsiveLayoutProps {
   children: React.ReactNode;
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   centerContent?: boolean;
-  sx?: any;
+  sx?: SxProps<Theme>;
 }
 
 const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({

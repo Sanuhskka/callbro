@@ -5,7 +5,6 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './contexts/AuthContext';
 import { WebRTCProvider } from './contexts/WebRTCContext';
 import { NotificationProvider } from './contexts/NotificationContext';
-import { CryptoProvider } from './contexts/CryptoContext';
 
 // Enhanced Components
 import { LoginEnhanced } from './components/Enhanced';
@@ -15,8 +14,8 @@ import { ChatWindowEnhanced } from './components/Enhanced';
 import { CallWindowEnhanced } from './components/Enhanced';
 
 // Original Components (fallbacks)
-import Login from './components/Auth/Login';
-import Register from './components/Auth/Register';
+import LoginForm from './components/Auth/LoginForm';
+import RegisterForm from './components/Auth/RegisterForm';
 import ChatLayout from './components/Chat/ChatLayout';
 import ChatWindow from './components/Chat/ChatWindow';
 import CallWindow from './components/Call/CallWindow';
@@ -121,8 +120,8 @@ const theme = createTheme({
 
 const AppEnhanced: React.FC = () => {
   // Use enhanced components when available, fallback to originals
-  const LoginComponent = LoginEnhanced || Login;
-  const RegisterComponent = RegisterEnhanced || Register;
+  const LoginComponent = LoginEnhanced || LoginForm;
+  const RegisterComponent = RegisterEnhanced || RegisterForm;
   const ChatLayoutComponent = ChatLayoutEnhanced || ChatLayout;
   const ChatWindowComponent = ChatWindowEnhanced || ChatWindow;
   const CallWindowComponent = CallWindowEnhanced || CallWindow;
@@ -130,7 +129,6 @@ const AppEnhanced: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <CryptoProvider>
         <NotificationProvider>
           <WebRTCProvider>
             <AuthProvider>
@@ -160,7 +158,6 @@ const AppEnhanced: React.FC = () => {
             </AuthProvider>
           </WebRTCProvider>
         </NotificationProvider>
-      </CryptoProvider>
     </ThemeProvider>
   );
 };

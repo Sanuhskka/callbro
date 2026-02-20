@@ -6,12 +6,10 @@ import {
   Typography,
   Avatar,
   Paper,
-  Fab,
-  Chip,
   CircularProgress,
-  useTheme,
-  useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/system';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import {
   Send,
   Mic,
@@ -19,9 +17,8 @@ import {
   Phone,
   Video,
   Paperclip,
-  Smile,
-  MoreVertical,
   Circle,
+  Settings,
 } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -390,7 +387,7 @@ const ChatWindowEnhanced: React.FC = () => {
             <Video />
           </IconButton>
           <IconButton>
-            <MoreVertical />
+            <Settings />
           </IconButton>
         </Box>
       </Paper>
@@ -443,8 +440,8 @@ const ChatWindowEnhanced: React.FC = () => {
           <Paperclip />
         </IconButton>
         
-        <IconButton onClick={() => setShowEmoji(!showEmoji)}>
-          <Smile />
+        <IconButton onClick={() => fileInputRef.current?.click()}>
+          <Paperclip />
         </IconButton>
         
         <TextField
@@ -453,7 +450,7 @@ const ChatWindowEnhanced: React.FC = () => {
           maxRows={4}
           placeholder="Введите сообщение..."
           value={messageText}
-          onChange={(e) => setMessageText(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMessageText(e.target.value)}
           onKeyPress={handleKeyPress}
           variant="outlined"
           size="small"

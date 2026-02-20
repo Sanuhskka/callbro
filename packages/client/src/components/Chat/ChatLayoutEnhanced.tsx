@@ -17,7 +17,8 @@ import {
   Divider,
   CircularProgress,
 } from '@mui/material';
-import { useTheme, useMediaQuery } from '@mui/system';
+import { useTheme } from '@mui/system';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import {
   MessageSquare,
   Phone,

@@ -8,16 +8,14 @@ import {
   Alert,
   CircularProgress,
   IconButton,
-  useTheme,
-  useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/system';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import {
   Eye,
   EyeOff,
   User,
   Lock,
-  Shield,
-  ArrowRight,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -99,7 +97,7 @@ const LoginEnhanced: React.FC = () => {
               mb: 2,
             }}
           >
-            <Shield size={32} color="white" />
+            <Lock size={32} />
           </Box>
           <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
             Добро пожаловать
@@ -129,7 +127,9 @@ const LoginEnhanced: React.FC = () => {
             disabled={loading}
             InputProps={{
               startAdornment: (
-                <User size={20} style={{ marginRight: 8, color: '#666' }} />
+                <Box sx={{ mr: 1, color: '#666', display: 'flex' }}>
+                  <User size={20} />
+                </Box>
               ),
             }}
             sx={{
@@ -151,7 +151,9 @@ const LoginEnhanced: React.FC = () => {
             disabled={loading}
             InputProps={{
               startAdornment: (
-                <Lock size={20} style={{ marginRight: 8, color: '#666' }} />
+                <Box sx={{ mr: 1, color: '#666', display: 'flex' }}>
+                  <Lock size={20} />
+                </Box>
               ),
               endAdornment: (
                 <IconButton
@@ -191,7 +193,6 @@ const LoginEnhanced: React.FC = () => {
             ) : (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 Войти
-                <ArrowRight size={20} />
               </Box>
             )}
           </Button>
@@ -226,7 +227,7 @@ const LoginEnhanced: React.FC = () => {
           }}
         >
           <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Shield size={14} />
+            <Lock size={14} />
             Все сообщения шифруются end-to-end
           </Typography>
         </Box>
