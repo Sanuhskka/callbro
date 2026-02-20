@@ -21,12 +21,18 @@ export interface User {
 export interface LoginRequest {
   username: string;
   password: string;
+  deviceId?: string;
+  deviceName?: string;
+  userAgent?: string;
 }
 
 export interface RegisterRequest {
   username: string;
   password: string;
   email?: string;
+  deviceId?: string;
+  deviceName?: string;
+  userAgent?: string;
 }
 
 export interface AuthResponse {
@@ -40,6 +46,7 @@ export interface AuthState {
   user: User | null;
   token: string | null;
   keyPair: KeyPair | null;
+  deviceId?: string;
 }
 
 export class AuthService {
@@ -62,6 +69,46 @@ export class AuthService {
   }
 
   /**
+   * Получает или генерирует уникальный ID устройства
+   */
+  private getDeviceId(): string {
+    const storageKey = 'device-id';
+    let deviceId = localStorage.getItem(storageKey);
+    
+    if (!deviceId) {
+      // Генерируем новый ID устройства
+      deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem(storageKey, deviceId);
+      console.log('Generated new device ID:', deviceId);
+    }
+    
+    return deviceId;
+  }
+
+  /**
+   * Получает информацию об устройстве
+   */
+  private getDeviceInfo(): { deviceName: string; userAgent: string } {
+    const userAgent = navigator.userAgent;
+    let deviceName = 'Unknown Device';
+    
+    // Определяем тип устройства
+    if (/Mobile|Android|iPhone|iPad|iPod/.test(userAgent)) {
+      deviceName = 'Mobile Device';
+    } else if (/Tablet|iPad/.test(userAgent)) {
+      deviceName = 'Tablet';
+    } else if (/Windows/.test(userAgent)) {
+      deviceName = 'Windows PC';
+    } else if (/Mac/.test(userAgent)) {
+      deviceName = 'Mac';
+    } else if (/Linux/.test(userAgent)) {
+      deviceName = 'Linux PC';
+    }
+    
+    return { deviceName, userAgent };
+  }
+
+  /**
    * Регистрирует нового пользователя с генерацией ключевой пары
    */
   async register(request: RegisterRequest): Promise<AuthResponse> {
@@ -72,12 +119,19 @@ export class AuthService {
       // Экспортируем публичный ключ в формате PEM для отправки на сервер
       const publicKeyPem = await this.exportPublicKey(keyPair.publicKey);
 
+      // Получаем информацию об устройстве
+      const deviceId = this.getDeviceId();
+      const deviceInfo = this.getDeviceInfo();
+
       // Отправляем запрос на регистрацию
       const response = await this.makeRequest('/api/auth/register', {
         username: request.username,
         password: request.password,
         email: request.email,
         publicKey: publicKeyPem,
+        deviceId,
+        deviceName: deviceInfo.deviceName,
+        userAgent: deviceInfo.userAgent,
       });
 
       if (!response.ok) {
@@ -93,6 +147,7 @@ export class AuthService {
         user: data.user,
         token: data.token,
         keyPair,
+        deviceId,
       });
 
       // Сохраняем сессию в localStorage
@@ -115,10 +170,17 @@ export class AuthService {
    */
   async login(request: LoginRequest): Promise<AuthResponse> {
     try {
+      // Получаем информацию об устройстве
+      const deviceId = this.getDeviceId();
+      const deviceInfo = this.getDeviceInfo();
+
       // Отправляем запрос на вход
       const response = await this.makeRequest('/api/auth/login', {
         username: request.username,
         password: request.password,
+        deviceId,
+        deviceName: deviceInfo.deviceName,
+        userAgent: deviceInfo.userAgent,
       });
 
       if (!response.ok) {
@@ -145,6 +207,7 @@ export class AuthService {
         user: data.user,
         token: data.token,
         keyPair,
+        deviceId,
       });
 
       // Сохраняем сессию в localStorage
@@ -159,6 +222,60 @@ export class AuthService {
     } catch (error) {
       console.error('Login error:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Выполняет автоматический вход через deviceId
+   */
+  async autoLogin(): Promise<AuthResponse | null> {
+    try {
+      const deviceId = this.getDeviceId();
+      
+      // Отправляем запрос на автоматический вход
+      const response = await this.makeRequest('/api/auth/auto-login', {
+        deviceId,
+      });
+
+      if (!response.ok) {
+        console.log('Auto-login failed, device not recognized');
+        return null;
+      }
+
+      const data = await response.json();
+      
+      // Генерируем новую ключевую пару для сессии
+      const keyPair = await this.cryptoService.generateKeyPair();
+      
+      // Обновляем публичный ключ на сервере
+      try {
+        const publicKeyPem = await this.exportPublicKey(keyPair.publicKey);
+        await this.updatePublicKey(data.user.id, data.token, publicKeyPem);
+      } catch (error) {
+        console.warn('Failed to update public key:', error);
+      }
+
+      // Сохраняем данные аутентификации
+      this.setAuthState({
+        isAuthenticated: true,
+        user: data.user,
+        token: data.token,
+        keyPair,
+        deviceId,
+      });
+
+      // Сохраняем сессию в localStorage
+      await this.saveSession();
+
+      console.log(`Auto-login successful for user: ${data.user.username}`);
+      return {
+        user: data.user,
+        token: data.token,
+        keyPair,
+      };
+    } catch (error) {
+      console.log('Auto-login not available:', error);
+      return null;
     }
   }
 
@@ -360,6 +477,7 @@ export class AuthService {
       const sessionData = {
         user: this.state.user,
         token: this.state.token,
+        deviceId: this.state.deviceId,
         // Сохраняем приватный ключ в виде JSON Web Key (JWK)
         privateKeyJwk: this.state.keyPair ? await this.exportPrivateKey(this.state.keyPair.privateKey) : null,
         publicKeyJwk: this.state.keyPair ? await this.exportPublicKeyJwk(this.state.keyPair.publicKey) : null,
@@ -374,6 +492,7 @@ export class AuthService {
         const minimalSession = {
           user: this.state.user,
           token: this.state.token,
+          deviceId: this.state.deviceId,
           privateKeyJwk: null,
           publicKeyJwk: null,
         };
@@ -426,9 +545,10 @@ export class AuthService {
         user: session.user,
         token: session.token,
         keyPair,
+        deviceId: session.deviceId,
       });
 
-      console.log('Session restored for user:', session.user.username);
+      console.log('Session restored for user:', session.user.username, 'with device:', session.deviceId);
     } catch (error) {
       console.error('Failed to load stored session:', error);
       this.clearStoredSession();

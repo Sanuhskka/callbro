@@ -21,7 +21,7 @@ class MockWebSocket {
   on: any;
   addEventListener: any;
 
-  constructor(url?: string) {
+  constructor() {
     // Mock constructor
   }
 }

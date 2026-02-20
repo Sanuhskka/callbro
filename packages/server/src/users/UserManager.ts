@@ -1,6 +1,6 @@
-import { Pool, PoolClient } from 'pg';
+import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
-import { AuthMiddleware, AuthenticatedUser } from '../auth/AuthMiddleware';
+import { AuthMiddleware } from '../auth/AuthMiddleware';
 
 /**
  * UserManager - Управление пользователями и контактами
@@ -26,11 +26,17 @@ export interface CreateUserRequest {
   password: string;
   email?: string;
   publicKey?: string;
+  deviceId?: string;
+  deviceName?: string;
+  userAgent?: string;
 }
 
 export interface LoginRequest {
   username: string;
   password: string;
+  deviceId?: string;
+  deviceName?: string;
+  userAgent?: string;
 }
 
 export interface Contact {
@@ -75,6 +81,13 @@ export class UserManager {
   }
 
   /**
+   * Получает пул соединений с базой данных
+   */
+  getPool(): Pool {
+    return this.pool;
+  }
+
+  /**
    * Инициализирует базу данных и создает таблицы
    */
   private async initializeDatabase(): Promise<void> {
@@ -106,6 +119,20 @@ export class UserManager {
       );
     `;
 
+    const createDevicesTable = `
+      CREATE TABLE IF NOT EXISTS user_devices (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        device_id VARCHAR(255) NOT NULL,
+        device_name VARCHAR(100),
+        user_agent TEXT,
+        last_used TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        is_active BOOLEAN DEFAULT TRUE,
+        CONSTRAINT unique_user_device UNIQUE (user_id, device_id)
+      );
+    `;
+
     const createContactsTable = `
       CREATE TABLE IF NOT EXISTS contacts (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -124,12 +151,15 @@ export class UserManager {
       CREATE INDEX IF NOT EXISTS idx_users_last_seen ON users(last_seen);
       CREATE INDEX IF NOT EXISTS idx_contacts_user_id ON contacts(user_id);
       CREATE INDEX IF NOT EXISTS idx_contacts_contact_user_id ON contacts(contact_user_id);
+      CREATE INDEX IF NOT EXISTS idx_user_devices_user_id ON user_devices(user_id);
+      CREATE INDEX IF NOT EXISTS idx_user_devices_device_id ON user_devices(device_id);
     `;
 
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(createUsersTable);
+      await client.query(createDevicesTable);
       await client.query(createContactsTable);
       await client.query(createIndexes);
       await client.query('COMMIT');
@@ -198,6 +228,11 @@ export class UserManager {
         username: user.username,
       });
 
+      // Добавляем устройство, если указано
+      if (request.deviceId) {
+        await this.addOrUpdateDevice(user.id, request.deviceId, request.deviceName, request.userAgent);
+      }
+
       console.log(`User created: ${user.username} (${user.id})`);
       return { user, token };
     } finally {
@@ -251,6 +286,11 @@ export class UserManager {
         userId: user.id,
         username: user.username,
       });
+
+      // Добавляем устройство, если указано
+      if (request.deviceId) {
+        await this.addOrUpdateDevice(user.id, request.deviceId, request.deviceName, request.userAgent);
+      }
 
       console.log(`User logged in: ${user.username} (${user.id})`);
       return { user, token };
@@ -473,5 +513,202 @@ export class UserManager {
   async close(): Promise<void> {
     await this.pool.end();
     console.log('Database connection closed');
+  }
+
+  /**
+   * Добавляет или обновляет устройство пользователя
+   */
+  private async addOrUpdateDevice(
+    userId: string, 
+    deviceId: string, 
+    deviceName?: string, 
+    userAgent?: string
+  ): Promise<void> {
+    const client = await this.pool.connect();
+    
+    try {
+      // Проверяем, существует ли устройство
+      const existingDevice = await client.query(
+        'SELECT id FROM user_devices WHERE user_id = $1 AND device_id = $2',
+        [userId, deviceId]
+      );
+
+      if (existingDevice.rows.length > 0) {
+        // Обновляем существующее устройство
+        await client.query(
+          `UPDATE user_devices 
+           SET last_used = CURRENT_TIMESTAMP, 
+               device_name = COALESCE($3, device_name), 
+               user_agent = COALESCE($4, user_agent),
+               is_active = TRUE 
+           WHERE user_id = $1 AND device_id = $2`,
+          [userId, deviceId, deviceName, userAgent]
+        );
+      } else {
+        // Создаем новое устройство
+        await client.query(
+          `INSERT INTO user_devices (user_id, device_id, device_name, user_agent) 
+           VALUES ($1, $2, $3, $4)`,
+          [userId, deviceId, deviceName, userAgent]
+        );
+      }
+
+      console.log(`Device ${deviceId} registered/updated for user ${userId}`);
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Получает устройства пользователя
+   */
+  async getUserDevices(userId: string): Promise<Array<{
+    id: string;
+    deviceId: string;
+    deviceName?: string;
+    userAgent?: string;
+    lastUsed: Date;
+    createdAt: Date;
+    isActive: boolean;
+  }>> {
+    const client = await this.pool.connect();
+    
+    try {
+      const result = await client.query(
+        `SELECT id, device_id, device_name, user_agent, last_used, created_at, is_active
+         FROM user_devices 
+         WHERE user_id = $1 
+         ORDER BY last_used DESC`,
+        [userId]
+      );
+
+      return result.rows.map(row => ({
+        id: row.id,
+        deviceId: row.device_id,
+        deviceName: row.device_name,
+        userAgent: row.user_agent,
+        lastUsed: row.last_used,
+        createdAt: row.created_at,
+        isActive: row.is_active,
+      }));
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Проверяет, существует ли устройство для пользователя
+   */
+  async checkDeviceExists(userId: string, deviceId: string): Promise<boolean> {
+    const client = await this.pool.connect();
+    
+    try {
+      const result = await client.query(
+        'SELECT id FROM user_devices WHERE user_id = $1 AND device_id = $2 AND is_active = TRUE',
+        [userId, deviceId]
+      );
+
+      return result.rows.length > 0;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Деактивирует устройство пользователя
+   */
+  async deactivateDevice(userId: string, deviceId: string): Promise<void> {
+    const client = await this.pool.connect();
+    
+    try {
+      await client.query(
+        'UPDATE user_devices SET is_active = FALSE WHERE user_id = $1 AND device_id = $2',
+        [userId, deviceId]
+      );
+
+      console.log(`Device ${deviceId} deactivated for user ${userId}`);
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Поиск пользователей по username
+   */
+  async searchUsers(query: string, currentUserId: string, limit: number = 20): Promise<User[]> {
+    const client = await this.pool.connect();
+    
+    try {
+      const searchQuery = `%${query}%`;
+      const result = await client.query(
+        `SELECT id, username, email, public_key, created_at, last_seen, is_online
+         FROM users 
+         WHERE username ILIKE $1 
+         AND id != $2
+         ORDER BY 
+           CASE WHEN username ILIKE $3 THEN 1 ELSE 2 END,
+           username
+         LIMIT $4`,
+        [searchQuery, currentUserId, query, limit]
+      );
+
+      return result.rows.map(row => ({
+        id: row.id,
+        username: row.username,
+        email: row.email,
+        publicKey: row.public_key,
+        createdAt: row.created_at,
+        lastSeen: row.last_seen,
+        isOnline: row.is_online,
+      }));
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Поиск сообщений по содержимому
+   */
+  async searchMessages(userId: string, query: string, limit: number = 50): Promise<Array<{
+    id: string;
+    fromUserId: string;
+    toUserId: string;
+    content: string;
+    type: 'text' | 'media' | 'voice';
+    timestamp: Date;
+    fromUsername: string;
+    toUsername: string;
+  }>> {
+    const client = await this.pool.connect();
+    
+    try {
+      const searchQuery = `%${query}%`;
+      const result = await client.query(
+        `SELECT m.id, m.from_user_id, m.to_user_id, m.content, m.type, m.timestamp,
+                u1.username as from_username, u2.username as to_username
+         FROM messages m
+         JOIN users u1 ON m.from_user_id = u1.id
+         JOIN users u2 ON m.to_user_id = u2.id
+         WHERE (m.from_user_id = $1 OR m.to_user_id = $1)
+         AND m.content ILIKE $2
+         AND m.type = 'text'
+         ORDER BY m.timestamp DESC
+         LIMIT $3`,
+        [userId, searchQuery, limit]
+      );
+
+      return result.rows.map(row => ({
+        id: row.id,
+        fromUserId: row.from_user_id,
+        toUserId: row.to_user_id,
+        content: row.content,
+        type: row.type,
+        timestamp: row.timestamp,
+        fromUsername: row.from_username,
+        toUsername: row.to_username,
+      }));
+    } finally {
+      client.release();
+    }
   }
 }

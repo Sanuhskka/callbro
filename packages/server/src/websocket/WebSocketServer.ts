@@ -48,14 +48,16 @@ export class SecureWebSocketServer extends EventEmitter {
   private clients: Map<string, ClientConnection> = new Map();
   private pingInterval?: NodeJS.Timeout;
   private isStarted = false;
+  private messageService?: any; // Добавляем ссылку на MessageService
 
-  constructor(config: WebSocketConfig) {
+  constructor(config: WebSocketConfig, messageService?: any) {
     super();
     this.config = {
       pingInterval: 30000, // 30 секунд
       pingTimeout: 5000,   // 5 секунд
       ...config,
     };
+    this.messageService = messageService;
   }
 
   /**
@@ -200,7 +202,7 @@ export class SecureWebSocketServer extends EventEmitter {
   }
 
   /**
-   * Обрабатывает входящие сообщения
+   * Обрабатывает входящее сообщение
    */
   private handleMessage(client: ClientConnection, data: WebSocket.Data): void {
     try {
@@ -226,6 +228,42 @@ export class SecureWebSocketServer extends EventEmitter {
       }
     } catch (error) {
       console.error(`Error handling message from ${client.id}:`, error);
+    }
+  }
+
+  /**
+   * Отправляет сообщение о новом сообщении получателю
+   */
+  public sendNewMessageNotification(messageData: any): void {
+    const recipientClient = this.findClientByUserId(messageData.toUserId);
+    
+    if (recipientClient) {
+      this.sendToClient(recipientClient, {
+        type: 'new_message',
+        messageId: messageData.messageId,
+        fromUserId: messageData.fromUserId,
+        timestamp: messageData.timestamp,
+      });
+      
+      console.log(`New message notification sent to ${messageData.toUserId}`);
+    }
+  }
+
+  /**
+   * Отправляет уведомление об обновлении статуса сообщения
+   */
+  public sendMessageStatusNotification(statusData: any): void {
+    const recipientClient = this.findClientByUserId(statusData.userId);
+    
+    if (recipientClient) {
+      this.sendToClient(recipientClient, {
+        type: 'message_status',
+        messageType: statusData.type,
+        messageId: statusData.messageId,
+        timestamp: statusData.timestamp,
+      });
+      
+      console.log(`Message status notification sent to ${statusData.userId}`);
     }
   }
 

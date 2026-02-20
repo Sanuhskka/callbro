@@ -19,6 +19,7 @@ export interface AuthContextType extends AuthState {
   register: (username: string, password: string) => Promise<void>;
   logout: () => void;
   clearError: () => void;
+  autoLogin: () => Promise<boolean>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,10 +91,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const currentUser = authService.getCurrentUser();
         console.log('Checking auth on mount, currentUser:', currentUser);
+        
         if (currentUser) {
-          dispatch({ type: 'AUTH_SUCCESS', payload: currentUser });
+          // Проверяем валидность токена
+          const isValid = await authService.validateToken();
+          if (isValid) {
+            dispatch({ type: 'AUTH_SUCCESS', payload: currentUser });
+          } else {
+            // Пробуем автоматический вход через deviceId
+            console.log('Token invalid, trying auto-login...');
+            const autoLoginResult = await authService.autoLogin();
+            if (autoLoginResult) {
+              dispatch({ type: 'AUTH_SUCCESS', payload: autoLoginResult.user });
+            } else {
+              dispatch({ type: 'LOGOUT' });
+            }
+          }
         } else {
-          dispatch({ type: 'LOGOUT' });
+          // Пробуем автоматический вход через deviceId
+          console.log('No current user, trying auto-login...');
+          const autoLoginResult = await authService.autoLogin();
+          if (autoLoginResult) {
+            dispatch({ type: 'AUTH_SUCCESS', payload: autoLoginResult.user });
+          } else {
+            dispatch({ type: 'LOGOUT' });
+          }
         }
       } catch (error) {
         console.error('Auth check failed:', error);
@@ -145,12 +167,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'CLEAR_ERROR' });
   };
 
+  const autoLogin = async (): Promise<boolean> => {
+    try {
+      const autoLoginResult = await authService.autoLogin();
+      if (autoLoginResult) {
+        dispatch({ type: 'AUTH_SUCCESS', payload: autoLoginResult.user });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Auto-login failed:', error);
+      return false;
+    }
+  };
+
   const value: AuthContextType = {
     ...state,
     login,
     register,
     logout,
     clearError,
+    autoLogin,
   };
 
   return (

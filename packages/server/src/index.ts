@@ -1,6 +1,10 @@
 import { SecureWebSocketServer } from './websocket/WebSocketServer';
 import { AuthRouter } from './api/AuthRouter';
+import { MessageRouter } from './api/MessageRouter';
+import { MediaRouter } from './api/MediaRouter';
+import { SearchRouter } from './api/SearchRouter';
 import { UserManager } from './users/UserManager';
+import { MessageService } from './services/MessageService';
 import { AuthMiddleware } from './auth/AuthMiddleware';
 import * as http from 'http';
 import * as dotenv from 'dotenv';
@@ -33,19 +37,53 @@ const userManager = new UserManager(
   authMiddleware
 );
 
+// Создаем MessageService
+const messageService = new MessageService(userManager.getPool());
+
 // Создаем AuthRouter
 const authRouter = new AuthRouter(userManager);
 
+// Создаем MessageRouter
+const messageRouter = new MessageRouter(messageService, authMiddleware);
+
+// Создаем MediaRouter
+const mediaRouter = new MediaRouter(authMiddleware);
+
+// Создаем SearchRouter
+const searchRouter = new SearchRouter(userManager, authMiddleware);
+
 // Создаем HTTP сервер для REST API
 const httpServer = http.createServer(async (req, res) => {
-  await authRouter.handleRequest(req, res);
+  const url = new URL(req.url || '', `http://${req.headers.host}`);
+  const path = url.pathname;
+
+  try {
+    // Маршрутизация запросов к соответствующим роутерам
+    if (path.startsWith('/api/auth/') || path.startsWith('/api/contacts/') || path.startsWith('/api/users/') || path === '/api/health') {
+      await authRouter.handleRequest(req, res);
+    } else if (path.startsWith('/api/messages/')) {
+      await messageRouter.handleRequest(req, res);
+    } else if (path.startsWith('/api/media/')) {
+      await mediaRouter.handleRequest(req, res);
+    } else if (path.startsWith('/api/search/')) {
+      await searchRouter.handleRequest(req, res);
+    } else {
+      // Если маршрут не найден, отправляем 404
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Not found' }));
+    }
+  } catch (error) {
+    console.error('HTTP Server error:', error);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Internal server error' }));
+  }
 });
 
 // Создаем WebSocket сервер (используя тот же порт через upgrade)
 const wsServer = new SecureWebSocketServer({
   server: httpServer,
   host: '0.0.0.0',
-});
+}, messageService);
 
 // Обработчики событий
 wsServer.on('started', () => {
@@ -67,6 +105,15 @@ wsServer.on('user-disconnected', (userId) => {
 
 wsServer.on('signal', (from, to, message) => {
   console.log(`📨 Signal: ${message.type} from ${from.userId} to ${to.userId}`);
+});
+
+// Обработчики событий от MessageService
+messageService.on('new_message', (messageData) => {
+  wsServer.sendNewMessageNotification(messageData);
+});
+
+messageService.on('message_status_updated', (statusData) => {
+  wsServer.sendMessageStatusNotification(statusData);
 });
 
 wsServer.on('error', (error) => {

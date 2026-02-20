@@ -16,6 +16,9 @@ import {
   AppBar,
   Divider,
   CircularProgress,
+  Fab,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   MessageSquare,
@@ -25,12 +28,12 @@ import {
   LogOut,
   Circle,
   Menu,
-  Search as SearchIcon,
-} from '@mui/icons-material';
+  Search,
+  Plus,
+} from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useWebRTC } from '../../contexts/WebRTCContext';
 import { useNotificationHelpers } from '../../contexts/NotificationContext';
-import SearchPanelSimple from '../Search/SearchPanelSimple';
 
 const DRAWER_WIDTH = 320;
 const MOBILE_BREAKPOINT = 600;
@@ -48,11 +51,16 @@ interface Contact {
   lastMessageTime?: string;
 }
 
-const ChatLayout: React.FC = () => {
+const ChatLayoutEnhanced: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
   const { user, logout } = useAuth();
   const { incomingCall, answerCall, rejectCall } = useWebRTC();
@@ -60,36 +68,28 @@ const ChatLayout: React.FC = () => {
   const navigate = useNavigate();
   const { userId } = useParams();
 
-  // Загружаем контакты при монтировании
   useEffect(() => {
     loadContacts();
   }, []);
 
   const loadContacts = async () => {
     if (!user) return;
-
     try {
       setLoading(true);
       const token = localStorage.getItem('auth-token');
       const response = await fetch(`/api/contacts?userId=${user.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Authorization': `Bearer ${token}` },
       });
-
       if (response.ok) {
         const data = await response.json();
-        // Преобразуем контакты в нужный формат
         const formattedContacts = (data.contacts || []).map((contact: any) => ({
           ...contact,
           id: contact.contactUserId,
-          unreadCount: Math.floor(Math.random() * 3), // Mock данные для демонстрации
-          lastMessage: 'Последнее сообщение...', // Mock данные
-          lastMessageTime: '2:30 PM', // Mock данные
+          unreadCount: Math.floor(Math.random() * 3),
+          lastMessage: 'Последнее сообщение...',
+          lastMessageTime: '2:30 PM',
         }));
         setContacts(formattedContacts);
-      } else {
-        console.error('Failed to load contacts');
       }
     } catch (error) {
       console.error('Error loading contacts:', error);
@@ -104,9 +104,7 @@ const ChatLayout: React.FC = () => {
 
   const handleContactClick = (contactId: string) => {
     navigate(`/chat/${contactId}`);
-    if (window.innerWidth < TABLET_BREAKPOINT) {
-      setMobileOpen(false);
-    }
+    if (isMobile) setMobileOpen(false);
   };
 
   const handleLogout = () => {
@@ -122,46 +120,10 @@ const ChatLayout: React.FC = () => {
     navigate(`/call/${contactId}`);
   };
 
-  // Обработчики для поиска
-  const handleUserSelect = (selectedUser: any) => {
-    navigate(`/chat/${selectedUser.id}`);
-  };
-
-  const handleMessageSelect = (selectedMessage: any) => {
-    const otherUserId = selectedMessage.fromUserId === user?.id 
-      ? selectedMessage.toUserId 
-      : selectedMessage.fromUserId;
-    navigate(`/chat/${otherUserId}`);
-  };
-
-  const handleAddContact = async (username: string) => {
-    try {
-      const token = localStorage.getItem('auth-token');
-      const response = await fetch('/api/contacts/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ username }),
-      });
-
-      if (response.ok) {
-        loadContacts(); // Обновляем список контактов
-      } else {
-        console.error('Failed to add contact');
-      }
-    } catch (error) {
-      console.error('Error adding contact:', error);
-    }
-  };
-
-  // Handle incoming call
-  React.useEffect(() => {
+  useEffect(() => {
     if (incomingCall) {
       const contact = contacts.find(c => c.contactUserId === incomingCall.userId);
       const callerName = contact?.contactUsername || contact?.nickname || `User ${incomingCall.userId}`;
-
       showIncomingCall(
         callerName,
         incomingCall.callType,
@@ -173,13 +135,41 @@ const ChatLayout: React.FC = () => {
 
   const drawer = (
     <Box>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
+      <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
+        <Typography variant="h6" noWrap sx={{ fontWeight: 'bold' }}>
           Secure Messenger
         </Typography>
       </Toolbar>
       <Divider />
       
+      {/* Search Bar */}
+      <Box sx={{ p: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ flexGrow: 1 }}>
+            <input
+              type="text"
+              placeholder="Поиск контактов..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setShowSearch(true)}
+              onBlur={() => setTimeout(() => setShowSearch(false), 200)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '8px',
+                background: 'rgba(255,255,255,0.05)',
+                color: 'white',
+                fontSize: '14px',
+              }}
+            />
+          </Box>
+          <IconButton size="small">
+            <Search size={20} />
+          </IconButton>
+        </Box>
+      </Box>
+
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
           <CircularProgress />
@@ -188,7 +178,7 @@ const ChatLayout: React.FC = () => {
         <>
           <List sx={{ px: 1 }}>
             <Typography variant="subtitle2" color="text.secondary" sx={{ px: 2, py: 1 }}>
-              Messages
+              Сообщения
             </Typography>
             {contacts.map((contact) => (
               <ListItem key={contact.id} disablePadding sx={{ mb: 0.5 }}>
@@ -197,11 +187,9 @@ const ChatLayout: React.FC = () => {
                   selected={userId === contact.contactUserId}
                   sx={{
                     borderRadius: 2,
+                    minHeight: 72,
                     '&.Mui-selected': {
                       backgroundColor: 'rgba(25, 118, 210, 0.1)',
-                      '&:hover': {
-                        backgroundColor: 'rgba(25, 118, 210, 0.15)',
-                      },
                     },
                   }}
                 >
@@ -224,54 +212,43 @@ const ChatLayout: React.FC = () => {
                   </ListItemIcon>
                   <ListItemText
                     primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
-                          {contact.nickname || contact.contactUsername}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {contact.lastMessageTime}
-                        </Typography>
-                      </Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
+                        {contact.nickname || contact.contactUsername}
+                      </Typography>
                     }
                     secondary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5 }}>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: { xs: '120px', sm: '150px', md: '180px' },
-                          }}
-                        >
-                          {contact.lastMessage}
-                        </Typography>
-                        <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 0.5 }}>
-                          <IconButton
-                            size="small"
-                            onClick={(e: React.MouseEvent) => {
-                              e.stopPropagation();
-                              handleVoiceCall(contact.contactUserId);
-                            }}
-                            sx={{ p: 0.5 }}
-                          >
-                            <Phone size={16} />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={(e: React.MouseEvent) => {
-                              e.stopPropagation();
-                              handleVideoCall(contact.contactUserId);
-                            }}
-                            sx={{ p: 0.5 }}
-                          >
-                            <Video size={16} />
-                          </IconButton>
-                        </Box>
-                      </Box>
+                      <Typography variant="caption" color="text.secondary">
+                        {contact.lastMessage}
+                      </Typography>
                     }
                   />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {contact.lastMessageTime}
+                    </Typography>
+                    <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 0.5 }}>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleVoiceCall(contact.contactUserId);
+                        }}
+                        sx={{ p: 0.5 }}
+                      >
+                        <Phone size={16} />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleVideoCall(contact.contactUserId);
+                        }}
+                        sx={{ p: 0.5 }}
+                      >
+                        <Video size={16} />
+                      </IconButton>
+                    </Box>
+                  </Box>
                   {contact.unreadCount && contact.unreadCount > 0 && (
                     <Badge
                       badgeContent={contact.unreadCount}
@@ -288,9 +265,6 @@ const ChatLayout: React.FC = () => {
                 <Typography variant="body2" color="text.secondary">
                   У вас пока нет контактов
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Используйте поиск для добавления новых контактов
-                </Typography>
               </Box>
             )}
           </List>
@@ -301,7 +275,7 @@ const ChatLayout: React.FC = () => {
                 <ListItemIcon>
                   <Settings size={20} />
                 </ListItemIcon>
-                <ListItemText primary="Settings" />
+                <ListItemText primary="Настройки" />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
@@ -309,7 +283,7 @@ const ChatLayout: React.FC = () => {
                 <ListItemIcon>
                   <LogOut size={20} />
                 </ListItemIcon>
-                <ListItemText primary="Logout" />
+                <ListItemText primary="Выйти" />
               </ListItemButton>
             </ListItem>
           </List>
@@ -333,8 +307,6 @@ const ChatLayout: React.FC = () => {
         <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
           <IconButton
             color="inherit"
-            aria-label="open drawer"
-            edge="start"
             onClick={handleDrawerToggle}
             sx={{ mr: 2, display: { sm: 'none' } }}
           >
@@ -343,41 +315,28 @@ const ChatLayout: React.FC = () => {
           <Typography 
             variant="h6" 
             noWrap 
-            component="div" 
             sx={{ 
               flexGrow: 1,
               fontSize: { xs: '1rem', sm: '1.25rem' },
             }}
           >
-            {user?.username ? `Welcome, ${user.username}` : 'Secure Messenger'}
+            {user?.username ? `Привет, ${user.username}` : 'Secure Messenger'}
           </Typography>
           <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
-            <IconButton
-              color="inherit"
-              onClick={() => setSearchOpen(true)}
-              sx={{ mr: 1 }}
-            >
-              <Typography sx={{ fontSize: '20px' }}>🔍</Typography>
-            </IconButton>
             <MessageSquare size={20} />
             <Typography variant="body2" color="text.secondary">
-              End-to-end encrypted
+              Защищено шифрованием
             </Typography>
           </Box>
         </Toolbar>
       </AppBar>
 
-      <Box
-        component="nav"
-        sx={{ width: { sm: DRAWER_WIDTH }, flexShrink: { sm: 0 } }}
-      >
+      <Box component="nav" sx={{ width: { sm: DRAWER_WIDTH }, flexShrink: { sm: 0 } }}>
         <Drawer
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
-          }}
+          ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', sm: 'none' },
             '& .MuiDrawer-paper': {
@@ -418,18 +377,24 @@ const ChatLayout: React.FC = () => {
       >
         <Toolbar />
         <Outlet />
+        
+        {/* Floating Action Button for mobile */}
+        {isMobile && (
+          <Fab
+            color="primary"
+            aria-label="add"
+            sx={{
+              position: 'fixed',
+              bottom: 16,
+              right: 16,
+            }}
+          >
+            <Plus />
+          </Fab>
+        )}
       </Box>
-
-      {/* Search Panel */}
-      <SearchPanelSimple
-        open={searchOpen}
-        onClose={() => setSearchOpen(false)}
-        onUserSelect={handleUserSelect}
-        onMessageSelect={handleMessageSelect}
-        onAddContact={handleAddContact}
-      />
     </Box>
   );
 };
 
-export default ChatLayout;
+export default ChatLayoutEnhanced;
