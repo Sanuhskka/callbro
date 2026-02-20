@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Tabs,
-  Tab,
   Typography,
   Paper,
   IconButton,
   Drawer,
 } from '@mui/material';
-import { Close } from '@mui/icons-material';
+import { X } from 'lucide-react';
 import UserSearchSimple from './UserSearchSimple';
 import MessageSearch from './MessageSearch';
 import { useAuth } from '../../hooks/useAuth';
@@ -101,16 +99,40 @@ const SearchPanel: React.FC<SearchPanelProps> = ({
             Поиск
           </Typography>
           <IconButton onClick={onClose} size="small">
-            <Close />
+            <X />
           </IconButton>
         </Box>
 
-        {/* Tabs */}
+        {/* Simple Navigation */}
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleTabChange} aria-label="search tabs">
-            <Tab label="Пользователи" />
-            <Tab label="Сообщения" />
-          </Tabs>
+          <Box sx={{ display: 'flex' }}>
+            <Box
+              onClick={() => setTabValue(0)}
+              sx={{
+                px: 3,
+                py: 2,
+                cursor: 'pointer',
+                borderBottom: tabValue === 0 ? 2 : 1,
+                borderColor: tabValue === 0 ? 'primary.main' : 'divider',
+                bgcolor: tabValue === 0 ? 'action.selected' : 'transparent'
+              }}
+            >
+              <Typography variant="body2">Пользователи</Typography>
+            </Box>
+            <Box
+              onClick={() => setTabValue(1)}
+              sx={{
+                px: 3,
+                py: 2,
+                cursor: 'pointer',
+                borderBottom: tabValue === 1 ? 2 : 1,
+                borderColor: tabValue === 1 ? 'primary.main' : 'divider',
+                bgcolor: tabValue === 1 ? 'action.selected' : 'transparent'
+              }}
+            >
+              <Typography variant="body2">Сообщения</Typography>
+            </Box>
+          </Box>
         </Box>
 
         {/* Tab Content */}

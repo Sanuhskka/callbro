@@ -18,15 +18,15 @@ import {
   CircularProgress,
 } from '@mui/material';
 import {
-  MessageSquare,
   Phone,
-  Video,
   Settings,
-  LogOut,
   Circle,
   Menu,
-  Search as SearchIcon,
 } from '@mui/icons-material';
+import Videocam from '@mui/icons-material/Videocam';
+import Logout from '@mui/icons-material/Logout';
+import Message from '@mui/icons-material/Message';
+import { User } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useWebRTC } from '../../contexts/WebRTCContext';
 import { useNotificationHelpers } from '../../contexts/NotificationContext';
@@ -256,7 +256,7 @@ const ChatLayout: React.FC = () => {
                             }}
                             sx={{ p: 0.5 }}
                           >
-                            <Phone size={16} />
+                            <Phone fontSize="small" />
                           </IconButton>
                           <IconButton
                             size="small"
@@ -266,7 +266,7 @@ const ChatLayout: React.FC = () => {
                             }}
                             sx={{ p: 0.5 }}
                           >
-                            <Video size={16} />
+                            <Videocam fontSize="small" />
                           </IconButton>
                         </Box>
                       </Box>
@@ -299,7 +299,7 @@ const ChatLayout: React.FC = () => {
             <ListItem disablePadding>
               <ListItemButton sx={{ borderRadius: 2 }}>
                 <ListItemIcon>
-                  <Settings size={20} />
+                  <Settings fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary="Settings" />
               </ListItemButton>
@@ -307,7 +307,7 @@ const ChatLayout: React.FC = () => {
             <ListItem disablePadding>
               <ListItemButton onClick={handleLogout} sx={{ borderRadius: 2 }}>
                 <ListItemIcon>
-                  <LogOut size={20} />
+                  <Logout fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary="Logout" />
               </ListItemButton>
@@ -359,7 +359,7 @@ const ChatLayout: React.FC = () => {
             >
               <Typography sx={{ fontSize: '20px' }}>🔍</Typography>
             </IconButton>
-            <MessageSquare size={20} />
+            <Message fontSize="small" />
             <Typography variant="body2" color="text.secondary">
               End-to-end encrypted
             </Typography>

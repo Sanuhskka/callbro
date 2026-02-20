@@ -11,7 +11,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import {
-  Search,
   User,
   Phone,
   MessageSquare,
@@ -193,11 +192,11 @@ const ContactListNew: React.FC = () => {
           fullWidth
           placeholder="Поиск пользователей..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                {searching ? <CircularProgress size={20} /> : <Search size={20} />}
+                {searching ? <CircularProgress size={20} /> : <User size={20} />}
               </InputAdornment>
             ),
           }}
@@ -259,7 +258,9 @@ const ContactListNew: React.FC = () => {
       <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
         {contacts.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <User size={48} sx={{ mb: 2, color: 'text.secondary' }} />
+            <Box sx={{ mb: 2 }}>
+              <User size={48} />
+            </Box>
             <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
               Нет контактов
             </Typography>
@@ -290,16 +291,17 @@ const ContactListNew: React.FC = () => {
                       {(contact.nickname || contact.contactUsername).charAt(0).toUpperCase()}
                     </Avatar>
                     {contact.isOnline && (
-                      <Circle
-                        size={12}
-                        fill="#4caf50"
-                        color="#4caf50"
+                      <Box
                         sx={{
                           position: 'absolute',
                           bottom: 0,
                           right: 0,
+                          width: 12,
+                          height: 12,
+                          bgcolor: '#4caf50',
                           border: '2px solid',
                           borderColor: 'background.paper',
+                          borderRadius: '50%',
                         }}
                       />
                     )}

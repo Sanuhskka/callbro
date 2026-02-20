@@ -16,10 +16,8 @@ import {
   AppBar,
   Divider,
   CircularProgress,
-  Fab,
-  useTheme,
-  useMediaQuery,
 } from '@mui/material';
+import { useTheme, useMediaQuery } from '@mui/system';
 import {
   MessageSquare,
   Phone,
@@ -28,8 +26,7 @@ import {
   LogOut,
   Circle,
   Menu,
-  Search,
-  Plus,
+  User,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useWebRTC } from '../../contexts/WebRTCContext';
@@ -150,7 +147,7 @@ const ChatLayoutEnhanced: React.FC = () => {
               type="text"
               placeholder="Поиск контактов..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
               onFocus={() => setShowSearch(true)}
               onBlur={() => setTimeout(() => setShowSearch(false), 200)}
               style={{
@@ -165,7 +162,7 @@ const ChatLayoutEnhanced: React.FC = () => {
             />
           </Box>
           <IconButton size="small">
-            <Search size={20} />
+            <User size={20} />
           </IconButton>
         </Box>
       </Box>
@@ -229,7 +226,7 @@ const ChatLayoutEnhanced: React.FC = () => {
                     <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 0.5 }}>
                       <IconButton
                         size="small"
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
                           handleVoiceCall(contact.contactUserId);
                         }}
@@ -239,7 +236,7 @@ const ChatLayoutEnhanced: React.FC = () => {
                       </IconButton>
                       <IconButton
                         size="small"
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
                           handleVideoCall(contact.contactUserId);
                         }}
@@ -380,17 +377,25 @@ const ChatLayoutEnhanced: React.FC = () => {
         
         {/* Floating Action Button for mobile */}
         {isMobile && (
-          <Fab
+          <IconButton
             color="primary"
             aria-label="add"
             sx={{
               position: 'fixed',
               bottom: 16,
               right: 16,
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              '&:hover': {
+                bgcolor: 'primary.dark',
+              },
             }}
           >
-            <Plus />
-          </Fab>
+            <Typography>+</Typography>
+          </IconButton>
         )}
       </Box>
     </Box>

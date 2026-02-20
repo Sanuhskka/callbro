@@ -16,10 +16,9 @@ import {
   Badge,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
-  PersonAdd as PersonAddIcon,
-  FiberManualRecord as CircleIcon,
-} from '@mui/icons-material';
+  User as SearchIcon,
+  Circle as CircleIcon,
+} from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Popper from '@mui/material/Popper';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
@@ -155,7 +154,7 @@ const UserSearch: React.FC<UserSearchProps> = ({
           fullWidth
           placeholder={placeholder}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => query.length >= 2 && setOpen(true)}
           InputProps={{
@@ -209,12 +208,12 @@ const UserSearch: React.FC<UserSearchProps> = ({
                           overlap="circular"
                           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                           badgeContent={
-                            <CircleIcon
+                            <Box
                             sx={{
                               width: 12,
                               height: 12,
-                              color: user.isOnline ? '#4caf50' : '#9e9e9e',
-                              backgroundColor: user.isOnline ? '#4caf50' : '#9e9e9e',
+                              bgcolor: user.isOnline ? '#4caf50' : '#9e9e9e',
+                              borderRadius: '50%',
                             }}
                           />
                           }
@@ -244,7 +243,7 @@ const UserSearch: React.FC<UserSearchProps> = ({
                           onClick={(e: React.MouseEvent) => handleAddContact(e, user)}
                           sx={{ ml: 1 }}
                         >
-                          <PersonAddIcon fontSize="small" />
+                          <Typography fontSize="small">+</Typography>
                         </IconButton>
                       )}
                     </ListItemButton>

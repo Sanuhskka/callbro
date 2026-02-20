@@ -11,7 +11,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import {
-  Search,
   User,
   Phone,
   MessageSquare,
@@ -193,11 +192,11 @@ const ContactList: React.FC = () => {
           fullWidth
           placeholder="Поиск пользователей..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                {searching ? <CircularProgress size={20} /> : <Search size={20} />}
+                {searching ? <CircularProgress size={20} /> : <User size={20} />}
               </InputAdornment>
             ),
           }}
@@ -259,7 +258,9 @@ const ContactList: React.FC = () => {
       <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
         {contacts.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
-            <User size={48} sx={{ mb: 2, color: 'text.secondary' }} />
+            <Box sx={{ mb: 2 }}>
+              <User size={48} />
+            </Box>
             <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
               Нет контактов
             </Typography>
@@ -284,55 +285,57 @@ const ContactList: React.FC = () => {
                 }}
                 onClick={() => openChat(contact.contactUserId)}
               >
-                <ListItemAvatar>
-                  <Box sx={{ position: 'relative' }}>
-                    <Avatar sx={{ bgcolor: 'primary.main' }}>
-                      {(contact.nickname || contact.contactUsername).charAt(0).toUpperCase()}
-                    </Avatar>
+                <Box sx={{ position: 'relative', mr: 2 }}>
+                  <Avatar sx={{ bgcolor: 'primary.main' }}>
+                    {(contact.nickname || contact.contactUsername).charAt(0).toUpperCase()}
+                  </Avatar>
+                  {contact.isOnline && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: 0,
+                        right: 0,
+                        width: 12,
+                        height: 12,
+                        bgcolor: '#4caf50',
+                        border: '2px solid',
+                        borderColor: 'background.paper',
+                        borderRadius: '50%',
+                      }}
+                    />
+                  )}
+                </Box>
+                
+                <Box sx={{ flexGrow: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="subtitle1">
+                      {contact.nickname || contact.contactUsername}
+                    </Typography>
                     {contact.isOnline && (
-                      <Circle
-                        size={12}
-                        fill="#4caf50"
-                        color="#4caf50"
+                      <Typography
+                        variant="caption"
                         sx={{
-                          position: 'absolute',
-                          bottom: 0,
-                          right: 0,
-                          border: '2px solid',
-                          borderColor: 'background.paper',
+                          bgcolor: 'success.main',
+                          color: 'success.contrastText',
+                          px: 1,
+                          py: 0.25,
+                          borderRadius: 1,
+                          fontSize: '0.7rem',
                         }}
-                      />
+                      >
+                        В сети
+                      </Typography>
                     )}
                   </Box>
-                </ListItemAvatar>
-                
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="subtitle1">
-                        {contact.nickname || contact.contactUsername}
-                      </Typography>
-                      {contact.isOnline && (
-                        <Chip
-                          label="В сети"
-                          size="small"
-                          color="success"
-                          sx={{ height: 20, fontSize: '0.7rem' }}
-                        />
-                      )}
-                    </Box>
-                  }
-                  secondary={
-                    <Typography variant="body2" color="text.secondary">
-                      Добавлен {formatLastSeen(contact.addedAt)}
-                    </Typography>
-                  }
-                />
+                  <Typography variant="body2" color="text.secondary">
+                    Добавлен {formatLastSeen(contact.addedAt)}
+                  </Typography>
+                </Box>
 
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
                   <IconButton
                     size="small"
-                    onClick={(e) => {
+                    onClick={(e: React.MouseEvent) => {
                       e.stopPropagation();
                       startCall(contact.contactUserId, 'audio');
                     }}
@@ -342,13 +345,13 @@ const ContactList: React.FC = () => {
                   </IconButton>
                   <IconButton
                     size="small"
-                    onClick={(e) => {
+                    onClick={(e: React.MouseEvent) => {
                       e.stopPropagation();
                       startCall(contact.contactUserId, 'video');
                     }}
                     sx={{ bgcolor: 'secondary.main', color: 'secondary.contrastText' }}
                   >
-                    <MessageCircle size={16} />
+                    <MessageSquare size={16} />
                   </IconButton>
                 </Box>
               </ListItem>

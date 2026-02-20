@@ -6,10 +6,10 @@ import {
   Avatar,
   Paper,
   CircularProgress,
-  useTheme,
   useMediaQuery,
-  Grid,
 } from '@mui/material';
+import { useTheme } from '@mui/system';
+import Grid from '@mui/material/Unstable_Grid2';
 import {
   Phone,
   Video,
